@@ -223,14 +223,6 @@ class OmniLogicAPI:
             return resp
         return FilterDiagnostics.load_xml(resp)
 
-    @overload
-    async def async_get_pump_diagnostics(self, pool_id: int, equipment_id: int, raw: Literal[True]) -> str: ...
-    @overload
-    async def async_get_pump_diagnostics(self, pool_id: int, equipment_id: int, raw: Literal[False]) -> FilterDiagnostics: ...
-    @overload
-    async def async_get_pump_diagnostics(self, pool_id: int, equipment_id: int) -> FilterDiagnostics: ...
-    @overload
-    async def async_get_pump_diagnostics(self, pool_id: int, equipment_id: int, raw: bool) -> FilterDiagnostics | str: ...
     async def async_get_pump_diagnostics(self, pool_id: int, equipment_id: int, raw: bool = False) -> FilterDiagnostics | str:
         """Retrieve diagnostics for a VSP pump.
 

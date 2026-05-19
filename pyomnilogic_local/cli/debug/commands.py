@@ -17,8 +17,18 @@ from pyomnilogic_local.util import PrettyEnum
 
 if TYPE_CHECKING:
     from pyomnilogic_local import OmniLogic
+    from pyomnilogic_local.models.filter_diagnostics import FilterDiagnostics
     from pyomnilogic_local.models.telemetry import TelemetryChlorinator
     from pyomnilogic_local.omnitypes import MessageType
+
+
+def _echo_diagnostics_summary(diagnostics: "FilterDiagnostics", bow_id: int, equip_id: int) -> None:
+    click.echo(f"PoolID: {bow_id}")
+    click.echo(f"EquipmentID: {equip_id}")
+    click.echo(f"Power: {diagnostics.power_watts} W")
+    click.echo(f"Drive Rev: {diagnostics.drive_firmware_revision or 'Unknown'}")
+    click.echo(f"Display Rev: {diagnostics.display_firmware_revision or 'Unknown'}")
+    click.echo(f"Error: {diagnostics.error_summary}")
 
 
 @click.group()
@@ -92,12 +102,7 @@ def get_filter_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> No
         click.echo(diagnostics)
         return
 
-    click.echo(f"PoolID: {bow_id}")
-    click.echo(f"EquipmentID: {equip_id}")
-    click.echo(f"Power: {diagnostics.power_watts} W")
-    click.echo(f"Drive Rev: {diagnostics.drive_firmware_revision or 'Unknown'}")
-    click.echo(f"Display Rev: {diagnostics.display_firmware_revision or 'Unknown'}")
-    click.echo(f"Error: {diagnostics.error_summary}")
+    _echo_diagnostics_summary(diagnostics, bow_id, equip_id)
 
 
 @debug.command()
@@ -122,12 +127,7 @@ def get_pump_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> None
         click.echo(diagnostics)
         return
 
-    click.echo(f"PoolID: {bow_id}")
-    click.echo(f"EquipmentID: {equip_id}")
-    click.echo(f"Power: {diagnostics.power_watts} W")
-    click.echo(f"Drive Rev: {diagnostics.drive_firmware_revision or 'Unknown'}")
-    click.echo(f"Display Rev: {diagnostics.display_firmware_revision or 'Unknown'}")
-    click.echo(f"Error: {diagnostics.error_summary}")
+    _echo_diagnostics_summary(diagnostics, bow_id, equip_id)
 
 
 @debug.command()
