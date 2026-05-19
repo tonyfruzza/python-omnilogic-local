@@ -8,6 +8,7 @@ import click
 from pyomnilogic_local import OmniLogic
 from pyomnilogic_local.cli.debug import commands as debug
 from pyomnilogic_local.cli.get import commands as get
+from pyomnilogic_local.cli.set import commands as set_cmds
 
 
 @click.group()
@@ -60,3 +61,4 @@ def entrypoint(ctx: click.Context, host: str, port: int, timeout: int, debug: bo
 
 entrypoint.add_command(debug.debug)
 entrypoint.add_command(get.get)
+entrypoint.add_command(set_cmds.set)
