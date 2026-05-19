@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError
 from xmltodict import parse as xml_parse
 
@@ -69,7 +71,15 @@ class FilterDiagnostics(BaseModel):
             bytes_.append(byte_val)
         if not bytes_:
             return ""
-        return bytes(bytes_).decode("ascii", errors="ignore").strip()
+        raw = bytes(bytes_).decode("ascii", errors="ignore").strip()
+        if re.fullmatch(r"\d{4}", raw):
+            return f"{raw[:2]}.{raw[2]}.{raw[3]}"
+
+        compact = raw.lstrip("0") or raw
+        if re.fullmatch(r"\d{2}[A-Za-z]", compact):
+            return f"{compact[0]}.{compact[1:]}"
+
+        return raw
 
     @property
     def power_watts(self) -> int:
