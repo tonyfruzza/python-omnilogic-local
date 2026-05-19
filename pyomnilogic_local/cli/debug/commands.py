@@ -87,8 +87,47 @@ def get_filter_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> No
 
     """
     omnilogic: OmniLogic = ctx.obj["OMNILOGIC"]
-    telemetry = asyncio.run(omnilogic._api.async_get_filter_diagnostics(pool_id=bow_id, equipment_id=equip_id, raw=ctx.obj["RAW"]))
-    click.echo(telemetry)
+    diagnostics = asyncio.run(omnilogic._api.async_get_filter_diagnostics(pool_id=bow_id, equipment_id=equip_id, raw=ctx.obj["RAW"]))
+    if ctx.obj["RAW"]:
+        click.echo(diagnostics)
+        return
+
+    click.echo(f"PoolID: {bow_id}")
+    click.echo(f"EquipmentID: {equip_id}")
+    click.echo(f"Power: {diagnostics.power_watts} W")
+    click.echo(f"Drive Rev: {diagnostics.drive_firmware_revision or 'Unknown'}")
+    click.echo(f"Display Rev: {diagnostics.display_firmware_revision or 'Unknown'}")
+    click.echo(f"Error: {diagnostics.error_summary}")
+
+
+@debug.command()
+@click.argument("bow_id", type=int)
+@click.argument("equip_id", type=int)
+@click.pass_context
+def get_pump_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> None:
+    """Retrieve current VSP pump diagnostics from the controller.
+
+    Pump diagnostics use the same OmniLogic request type as filter diagnostics,
+    but this command is provided so pump diagnostics are discoverable under pump
+    workflows.
+
+    Example:
+        omnilogic debug get-pump-diagnostics 1 9
+        omnilogic debug --raw get-pump-diagnostics 1 9
+
+    """
+    omnilogic: OmniLogic = ctx.obj["OMNILOGIC"]
+    diagnostics = asyncio.run(omnilogic._api.async_get_pump_diagnostics(pool_id=bow_id, equipment_id=equip_id, raw=ctx.obj["RAW"]))
+    if ctx.obj["RAW"]:
+        click.echo(diagnostics)
+        return
+
+    click.echo(f"PoolID: {bow_id}")
+    click.echo(f"EquipmentID: {equip_id}")
+    click.echo(f"Power: {diagnostics.power_watts} W")
+    click.echo(f"Drive Rev: {diagnostics.drive_firmware_revision or 'Unknown'}")
+    click.echo(f"Display Rev: {diagnostics.display_firmware_revision or 'Unknown'}")
+    click.echo(f"Error: {diagnostics.error_summary}")
 
 
 @debug.command()
