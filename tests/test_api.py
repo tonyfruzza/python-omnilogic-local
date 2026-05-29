@@ -242,7 +242,7 @@ async def test_async_get_filter_diagnostics_generates_valid_xml() -> None:
         assert _get_xml_tag(root) == "Request"
         assert _find_elem(root, "Name").text == "GetUIFilterDiagnosticInfo"
         assert _find_param(root, "poolId").text == "1"
-        assert _find_param(root, "equipmentId").text == str(equipment_id)
+        assert _find_param(root, "equipmentId").text == "2"
 
 
 def test_filter_diagnostics_computed_fields() -> None:
