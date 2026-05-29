@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from pyomnilogic_local.api import OmniLogicAPI
@@ -35,6 +36,23 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class OmniLogicConfig:
+    host: str
+    port: int = 10444
+    timeout: float = DEFAULT_RESPONSE_TIMEOUT
+
+    # By default, we only poll the telemetry and mspconfig when refreshing data
+    # More optional data polls will be added in the future
+    poll_telemetry: bool = True
+    poll_mspconfig: bool = True
+
+    # This controls if EquipmentDicts will log warnings if multiple pieces of equipment
+    # have the same name. If you only address equipment by system_id, you can disable this
+    # warning to reduce log noise.
+    warn_duplicate_equipment_names: bool = True
+
+
 class OmniLogic:
     mspconfig: MSPConfig
     telemetry: Telemetry
@@ -44,6 +62,7 @@ class OmniLogic:
     groups: EquipmentDict[Group]
     schedules: EquipmentDict[Schedule]
 
+    config: OmniLogicConfig
     _api: OmniLogicAPI | OmniLogicMockAPI
     _mspconfig_last_updated: float = 0.0
     _telemetry_last_updated: float = 0.0
@@ -54,15 +73,15 @@ class OmniLogic:
     _min_mspversion: str = "R05"
     _warned_mspversion: bool = False
 
-    def __init__(self, host: str, port: int = 10444, timeout: float = DEFAULT_RESPONSE_TIMEOUT) -> None:
-        self.host = host
-        self.port = port
+    def __init__(self, config: OmniLogicConfig) -> None:
+
+        self.config = config
 
         sim_data_path = os.environ.get("PYOMNILOGIC_SIMULATION_DATA")
         if sim_data_path:
             self._api = OmniLogicMockAPI(sim_data_path)
         else:
-            self._api = OmniLogicAPI(host, port, timeout)
+            self._api = OmniLogicAPI(config.host, config.port, config.timeout)
         self._refresh_lock = asyncio.Lock()
 
     def __repr__(self) -> str:
@@ -80,11 +99,11 @@ class OmniLogic:
             filter_count = len(self.all_filters)
 
             return (
-                f"OmniLogic(host={self.host!r}, port={self.port}, "
+                f"OmniLogic(host={self._api.controller_ip!r}, port={self.config.port}, "
                 f"bows={bow_count}, lights={light_count}, relays={relay_count}, "
                 f"pumps={pump_count}, filters={filter_count})"
             )
-        return f"OmniLogic(host={self.host!r}, port={self.port}, not_initialized=True)"
+        return f"OmniLogic(host={self._api.controller_ip!r}, port={self.config.port}, not_initialized=True)"
 
     async def refresh(
         self,
@@ -107,6 +126,12 @@ class OmniLogic:
             force: Force refresh of telemetry and MSPConfig (deprecated, use individual force flags instead)
         """
         if force:
+            if not getattr(self, "_warn_deprecated_force", False):
+                _LOGGER.warning(
+                    "The 'force' parameter to OmniLogic.refresh() is deprecated and will be removed "
+                    "in a future version. Use 'force_telemetry' and 'force_mspconfig' instead.",
+                )
+                self._warn_deprecated_force = True
             force_telemetry = True
             force_mspconfig = True
 
@@ -170,15 +195,23 @@ class OmniLogic:
 
         # Update groups
         if self.mspconfig.groups is None:
-            self.groups = EquipmentDict()
+            self.groups = self._make_equipment_dict()
         else:
-            self.groups = EquipmentDict([Group(self, group_, self.telemetry) for group_ in self.mspconfig.groups])
+            self.groups = self._make_equipment_dict(
+                [Group(self, group_, self.telemetry) for group_ in self.mspconfig.groups],
+            )
 
         # Update schedules
         if self.mspconfig.schedules is None:
-            self.schedules = EquipmentDict()
+            self.schedules = self._make_equipment_dict()
         else:
-            self.schedules = EquipmentDict([Schedule(self, schedule_, self.telemetry) for schedule_ in self.mspconfig.schedules])
+            self.schedules = self._make_equipment_dict(
+                [Schedule(self, schedule_, self.telemetry) for schedule_ in self.mspconfig.schedules],
+            )
+
+    def _make_equipment_dict[OE: OmniEquipment[Any, Any]](self, items: list[OE] | None = None) -> EquipmentDict[OE]:
+        """Create an EquipmentDict pre-configured with this instance's warn_duplicates setting."""
+        return EquipmentDict(items, warn_duplicates=self.config.warn_duplicate_equipment_names)
 
     # Equipment discovery properties
     @property
@@ -190,7 +223,7 @@ class OmniLogic:
         # Lights in each bow
         for bow in self.backyard.bow.values():
             lights.extend(bow.lights.values())
-        return EquipmentDict(lights)
+        return self._make_equipment_dict(lights)
 
     @property
     def all_relays(self) -> EquipmentDict[Relay]:
@@ -201,7 +234,7 @@ class OmniLogic:
         # Relays in each bow
         for bow in self.backyard.bow.values():
             relays.extend(bow.relays.values())
-        return EquipmentDict(relays)
+        return self._make_equipment_dict(relays)
 
     @property
     def all_pumps(self) -> EquipmentDict[Pump]:
@@ -209,7 +242,7 @@ class OmniLogic:
         pumps: list[Pump] = []
         for bow in self.backyard.bow.values():
             pumps.extend(bow.pumps.values())
-        return EquipmentDict(pumps)
+        return self._make_equipment_dict(pumps)
 
     @property
     def all_filters(self) -> EquipmentDict[Filter]:
@@ -217,7 +250,7 @@ class OmniLogic:
         filters: list[Filter] = []
         for bow in self.backyard.bow.values():
             filters.extend(bow.filters.values())
-        return EquipmentDict(filters)
+        return self._make_equipment_dict(filters)
 
     @property
     def all_sensors(self) -> EquipmentDict[Sensor]:
@@ -228,13 +261,13 @@ class OmniLogic:
         # Sensors in each bow
         for bow in self.backyard.bow.values():
             sensors.extend(bow.sensors.values())
-        return EquipmentDict(sensors)
+        return self._make_equipment_dict(sensors)
 
     @property
     def all_heaters(self) -> EquipmentDict[Heater]:
         """Returns all Heater (VirtualHeater) instances across all bows in the backyard."""
         heaters = [bow.heater for bow in self.backyard.bow.values() if bow.heater is not None]
-        return EquipmentDict(heaters)
+        return self._make_equipment_dict(heaters)
 
     @property
     def all_heater_equipment(self) -> EquipmentDict[HeaterEquipment]:
@@ -242,13 +275,13 @@ class OmniLogic:
         heater_equipment: list[HeaterEquipment] = []
         for heater in self.all_heaters.values():
             heater_equipment.extend(heater.heater_equipment.values())
-        return EquipmentDict(heater_equipment)
+        return self._make_equipment_dict(heater_equipment)
 
     @property
     def all_chlorinators(self) -> EquipmentDict[Chlorinator]:
         """Returns all Chlorinator instances across all bows in the backyard."""
         chlorinators = [bow.chlorinator for bow in self.backyard.bow.values() if bow.chlorinator is not None]
-        return EquipmentDict(chlorinators)
+        return self._make_equipment_dict(chlorinators)
 
     @property
     def all_chlorinator_equipment(self) -> EquipmentDict[ChlorinatorEquipment]:
@@ -256,7 +289,7 @@ class OmniLogic:
         chlorinator_equipment: list[ChlorinatorEquipment] = []
         for chlorinator in self.all_chlorinators.values():
             chlorinator_equipment.extend(chlorinator.chlorinator_equipment.values())
-        return EquipmentDict(chlorinator_equipment)
+        return self._make_equipment_dict(chlorinator_equipment)
 
     @property
     def all_csad_equipment(self) -> EquipmentDict[CSADEquipment]:
@@ -264,13 +297,13 @@ class OmniLogic:
         csad_equipment: list[CSADEquipment] = []
         for csad in self.all_csads.values():
             csad_equipment.extend(csad.csad_equipment.values())
-        return EquipmentDict(csad_equipment)
+        return self._make_equipment_dict(csad_equipment)
 
     @property
     def all_csads(self) -> EquipmentDict[CSAD]:
         """Returns all CSAD instances across all bows in the backyard."""
         csads = [bow.csad for bow in self.backyard.bow.values() if bow.csad is not None]
-        return EquipmentDict(csads)
+        return self._make_equipment_dict(csads)
 
     @property
     def all_bows(self) -> EquipmentDict[Bow]:

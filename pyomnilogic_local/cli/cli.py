@@ -5,7 +5,7 @@ import logging
 
 import click
 
-from pyomnilogic_local import OmniLogic
+from pyomnilogic_local import OmniLogic, OmniLogicConfig
 from pyomnilogic_local.cli.debug import commands as debug
 from pyomnilogic_local.cli.get import commands as get
 
@@ -39,16 +39,22 @@ def entrypoint(ctx: click.Context, host: str, port: int, timeout: int, debug: bo
     """
     ctx.ensure_object(dict)
 
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(
+        level=logging.DEBUG if debug else logging.INFO,
+    )
 
     # Store the host for later connection, but don't connect yet
-    ctx.obj["HOST"] = host
-    ctx.obj["PORT"] = port
-    ctx.obj["TIMEOUT"] = timeout
-    omnilogic = OmniLogic(host, port, timeout)  # Store the OmniLogic instance for later use
+    config = OmniLogicConfig(
+        host=host,
+        port=port,
+        timeout=timeout,
+        # The CLI should only ever reference things by their system_id
+        # so we can ignore duplicate name warnings
+        warn_duplicate_equipment_names=False,
+    )
+    omnilogic = OmniLogic(config)  # Store the OmniLogic instance for later use
 
-    asyncio.run(omnilogic.refresh(force=True))
+    asyncio.run(omnilogic.refresh())
 
     ctx.obj["OMNILOGIC"] = omnilogic
 

@@ -57,16 +57,18 @@ class EquipmentDict[OE: OmniEquipment[Any, Any]]:
         always lookup by name. This type-based differentiation prevents ambiguity.
     """
 
-    def __init__(self, items: list[OE] | None = None) -> None:
+    def __init__(self, items: list[OE] | None = None, warn_duplicates: bool = True) -> None:
         """Initialize the equipment collection.
 
         Args:
             items: Optional list of equipment items to populate the collection.
+            warn_duplicates: Whether to log warnings for duplicate names.
 
         Raises:
             ValueError: If any item has neither a system_id nor a name.
         """
         self._items: list[OE] = items if items is not None else []
+        self._warn_duplicates = warn_duplicates
         self._validate()
 
     def _validate(self) -> None:
@@ -89,21 +91,22 @@ class EquipmentDict[OE: OmniEquipment[Any, Any]]:
             raise ValueError(msg)
 
         # Find duplicate names that we haven't warned about yet
-        name_counts = Counter(item.name for item in self._items if item.name is not None)
-        duplicate_names = {name for name, count in name_counts.items() if count > 1}
-        unwarned_duplicates = duplicate_names.difference(_WARNED_DUPLICATE_NAMES)
+        if self._warn_duplicates:
+            name_counts = Counter(item.name for item in self._items if item.name is not None)
+            duplicate_names = {name for name, count in name_counts.items() if count > 1}
+            unwarned_duplicates = duplicate_names.difference(_WARNED_DUPLICATE_NAMES)
 
-        # Log warnings for new duplicates
-        for name in unwarned_duplicates:
-            _LOGGER.warning(
-                "Equipment collection contains %d items with the same name '%s'. "
-                "Name-based lookups will return the first match. "
-                "Consider using system_id-based lookups for reliability "
-                "or renaming equipment to avoid duplicates.",
-                name_counts[name],
-                name,
-            )
-            _WARNED_DUPLICATE_NAMES.add(name)
+            # Log warnings for new duplicates
+            for name in unwarned_duplicates:
+                _LOGGER.warning(
+                    "Equipment collection contains %d items with the same name '%s'. "
+                    "Name-based lookups will return the first match. "
+                    "Consider using system_id-based lookups for reliability "
+                    "or renaming equipment to avoid duplicates.",
+                    name_counts[name],
+                    name,
+                )
+                _WARNED_DUPLICATE_NAMES.add(name)
 
     @property
     def _by_name(self) -> dict[str, OE]:

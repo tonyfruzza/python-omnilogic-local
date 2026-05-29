@@ -65,11 +65,14 @@ pip install python-omnilogic-local[cli]
 
 ```python
 import asyncio
-from pyomnilogic_local import OmniLogic
+from pyomnilogic_local import OmniLogic, OmniLogicConfig
 
 async def main():
     # Connect to your OmniLogic controller
-    omni = OmniLogic("192.168.1.100")
+    config = OmniLogicConfig(
+        host="192.168.1.100"
+    )
+    omni = OmniLogic(config)
 
     # Initial refresh to load configuration and state
     await omni.refresh()
@@ -110,7 +113,11 @@ asyncio.run(main())
 
 ```python
 async def monitor_pool():
-    omni = OmniLogic("192.168.1.100")
+    config = OmniLogicConfig(
+        host="192.168.1.100"
+    )
+    omni = OmniLogic(config)
+
     await omni.refresh()
 
     pool = omni.backyard.bow["Pool"]
@@ -140,8 +147,11 @@ asyncio.run(monitor_pool())
 The library includes intelligent state management to minimize unnecessary API calls:
 
 ```python
-# Force immediate refresh
-await omni.refresh(force=True)
+# Force immediate refresh of Telemetry
+await omni.refresh(force_telemetry=True)
+
+# Force immediate refresh of MSP Config
+await omni.refresh(force_mspconfig=True)
 
 # Refresh only if data is older than 30 seconds
 await omni.refresh(if_older_than=30.0)

@@ -102,7 +102,7 @@ class Heater(OmniEquipment[MSPVirtualHeater, TelemetryVirtualHeater]):
 
     mspconfig: MSPVirtualHeater
     telemetry: TelemetryVirtualHeater
-    heater_equipment: EquipmentDict[HeaterEquipment] = EquipmentDict()
+    heater_equipment: EquipmentDict[HeaterEquipment]
 
     def __init__(self, omni: OmniLogic, mspconfig: MSPVirtualHeater, telemetry: Telemetry) -> None:
         super().__init__(omni, mspconfig, telemetry)
@@ -119,7 +119,9 @@ class Heater(OmniEquipment[MSPVirtualHeater, TelemetryVirtualHeater]):
             self.heater_equipment = EquipmentDict()
             return
 
-        self.heater_equipment = EquipmentDict([HeaterEquipment(self._omni, equip, telemetry) for equip in mspconfig.heater_equipment])
+        self.heater_equipment = self._omni._make_equipment_dict(
+            [HeaterEquipment(self._omni, equip, telemetry) for equip in mspconfig.heater_equipment]
+        )
 
     @property
     def max_temp(self) -> int:

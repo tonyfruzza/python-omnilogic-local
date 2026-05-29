@@ -15,7 +15,7 @@ from .filter import Filter
 from .groups import Group
 from .heater import Heater
 from .heater_equip import HeaterEquipment
-from .omnilogic import OmniLogic
+from .omnilogic import OmniLogic, OmniLogicConfig
 from .pump import Pump
 from .relay import Relay
 from .schedule import Schedule
@@ -47,6 +47,7 @@ __all__ = [
     "OmniEquipmentNotInitializedError",
     "OmniEquipmentNotReadyError",
     "OmniLogic",
+    "OmniLogicConfig",
     "OmniLogicLocalError",
     "Pump",
     "Relay",

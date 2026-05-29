@@ -97,10 +97,10 @@ class Backyard(OmniEquipment[MSPBackyard, TelemetryBackyard]):
 
     mspconfig: MSPBackyard
     telemetry: TelemetryBackyard
-    bow: EquipmentDict[Bow] = EquipmentDict()
-    lights: EquipmentDict[ColorLogicLight] = EquipmentDict()
-    relays: EquipmentDict[Relay] = EquipmentDict()
-    sensors: EquipmentDict[Sensor] = EquipmentDict()
+    bow: EquipmentDict[Bow]
+    lights: EquipmentDict[ColorLogicLight]
+    relays: EquipmentDict[Relay]
+    sensors: EquipmentDict[Sensor]
 
     def __init__(self, omni: OmniLogic, mspconfig: MSPBackyard, telemetry: Telemetry) -> None:
         super().__init__(omni, mspconfig, telemetry)
@@ -169,7 +169,7 @@ class Backyard(OmniEquipment[MSPBackyard, TelemetryBackyard]):
             self.bow = EquipmentDict()
             return
 
-        self.bow = EquipmentDict([Bow(self._omni, bow, telemetry) for bow in mspconfig.bow])
+        self.bow = self._omni._make_equipment_dict([Bow(self._omni, bow, telemetry) for bow in mspconfig.bow])
 
     def _update_lights(self, mspconfig: MSPBackyard, telemetry: Telemetry) -> None:
         """Update the lights based on the MSP configuration."""
@@ -177,7 +177,9 @@ class Backyard(OmniEquipment[MSPBackyard, TelemetryBackyard]):
             self.lights = EquipmentDict()
             return
 
-        self.lights = EquipmentDict([ColorLogicLight(self._omni, light, telemetry) for light in mspconfig.colorlogic_light])
+        self.lights = self._omni._make_equipment_dict(
+            [ColorLogicLight(self._omni, light, telemetry) for light in mspconfig.colorlogic_light]
+        )
 
     def _update_relays(self, mspconfig: MSPBackyard, telemetry: Telemetry) -> None:
         """Update the relays based on the MSP configuration."""
@@ -185,7 +187,7 @@ class Backyard(OmniEquipment[MSPBackyard, TelemetryBackyard]):
             self.relays = EquipmentDict()
             return
 
-        self.relays = EquipmentDict([Relay(self._omni, relay, telemetry) for relay in mspconfig.relay])
+        self.relays = self._omni._make_equipment_dict([Relay(self._omni, relay, telemetry) for relay in mspconfig.relay])
 
     def _update_sensors(self, mspconfig: MSPBackyard, telemetry: Telemetry) -> None:
         """Update the sensors based on the MSP configuration."""
@@ -193,4 +195,4 @@ class Backyard(OmniEquipment[MSPBackyard, TelemetryBackyard]):
             self.sensors = EquipmentDict()
             return
 
-        self.sensors = EquipmentDict([Sensor(self._omni, sensor, telemetry) for sensor in mspconfig.sensor])
+        self.sensors = self._omni._make_equipment_dict([Sensor(self._omni, sensor, telemetry) for sensor in mspconfig.sensor])

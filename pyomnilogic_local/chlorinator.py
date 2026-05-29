@@ -45,7 +45,7 @@ class Chlorinator(OmniEquipment[MSPChlorinator, TelemetryChlorinator]):
 
     mspconfig: MSPChlorinator
     telemetry: TelemetryChlorinator
-    chlorinator_equipment: EquipmentDict[ChlorinatorEquipment] = EquipmentDict()
+    chlorinator_equipment: EquipmentDict[ChlorinatorEquipment]
 
     def __init__(self, omni: OmniLogic, mspconfig: MSPChlorinator, telemetry: Telemetry) -> None:
         super().__init__(omni, mspconfig, telemetry)
@@ -62,7 +62,7 @@ class Chlorinator(OmniEquipment[MSPChlorinator, TelemetryChlorinator]):
             self.chlorinator_equipment = EquipmentDict()
             return
 
-        self.chlorinator_equipment = EquipmentDict(
+        self.chlorinator_equipment = self._omni._make_equipment_dict(
             [ChlorinatorEquipment(self._omni, equip, telemetry) for equip in mspconfig.chlorinator_equipment]
         )
 

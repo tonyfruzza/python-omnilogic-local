@@ -45,7 +45,7 @@ class CSAD(OmniEquipment[MSPCSAD, TelemetryCSAD]):
 
     mspconfig: MSPCSAD
     telemetry: TelemetryCSAD
-    csad_equipment: EquipmentDict[CSADEquipment] = EquipmentDict()
+    csad_equipment: EquipmentDict[CSADEquipment]
 
     def __init__(self, omni: OmniLogic, mspconfig: MSPCSAD, telemetry: Telemetry) -> None:
         super().__init__(omni, mspconfig, telemetry)
@@ -62,7 +62,9 @@ class CSAD(OmniEquipment[MSPCSAD, TelemetryCSAD]):
             self.csad_equipment = EquipmentDict()
             return
 
-        self.csad_equipment = EquipmentDict([CSADEquipment(self._omni, equip, telemetry) for equip in mspconfig.csad_equipment])
+        self.csad_equipment = self._omni._make_equipment_dict(
+            [CSADEquipment(self._omni, equip, telemetry) for equip in mspconfig.csad_equipment]
+        )
 
     # Expose MSPConfig attributes
     @property
