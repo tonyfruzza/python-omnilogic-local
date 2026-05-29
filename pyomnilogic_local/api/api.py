@@ -223,23 +223,6 @@ class OmniLogicAPI:
             return resp
         return FilterDiagnostics.load_xml(resp)
 
-    async def async_get_pump_diagnostics(self, pool_id: int, equipment_id: int, raw: bool = False) -> FilterDiagnostics | str:
-        """Retrieve diagnostics for a VSP pump.
-
-        OmniLogic uses the same underlying request type for both filter and auxiliary
-        VSP pump diagnostics. This helper exists to make pump diagnostics discoverable
-        without requiring users to call a filter-named API method.
-
-        Args:
-            pool_id (int): The Pool/BodyOfWater ID that you want to address
-            equipment_id (int): Which equipment_id within that Pool to address
-            raw (bool): Do not parse the response into a Pydantic model, just return the raw XML. Defaults to False.
-
-        Returns:
-            FilterDiagnostics|str: Either a parsed FilterDiagnostics object or a raw XML string.
-        """
-        return await self.async_get_filter_diagnostics(pool_id=pool_id, equipment_id=equipment_id, raw=raw)
-
     @overload
     async def async_get_telemetry(self, raw: Literal[True]) -> str: ...
     @overload

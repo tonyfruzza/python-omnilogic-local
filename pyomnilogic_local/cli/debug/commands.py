@@ -85,44 +85,19 @@ def get_telemetry(ctx: click.Context) -> None:
 @click.argument("bow_id", type=int)
 @click.argument("equip_id", type=int)
 @click.pass_context
-def get_filter_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> None:
-    """Retrieve current filter diagnostics from the controller.
+def get_filter_pump_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> None:
+    """Retrieve current filter/pump diagnostics from the controller.
 
-    Filter diagnostics include real-time sensor readings, equipment states, temperatures,
-    and other operational data. Use --raw to see the unprocessed XML.
+    Filter and VSP pump diagnostics use the same underlying OmniLogic request type.
+    This command works for both filter pumps and auxiliary VSP pumps.
 
     Example:
-        omnilogic debug get-filter-diagnostics
-        omnilogic debug --raw get-filter-diagnostics
+        omnilogic debug get-filter-pump-diagnostics 1 3
+        omnilogic debug --raw get-filter-pump-diagnostics 1 3
 
     """
     omnilogic: OmniLogic = ctx.obj["OMNILOGIC"]
     diagnostics = asyncio.run(omnilogic._api.async_get_filter_diagnostics(pool_id=bow_id, equipment_id=equip_id, raw=ctx.obj["RAW"]))
-    if ctx.obj["RAW"]:
-        click.echo(diagnostics)
-        return
-
-    _echo_diagnostics_summary(diagnostics, bow_id, equip_id)
-
-
-@debug.command()
-@click.argument("bow_id", type=int)
-@click.argument("equip_id", type=int)
-@click.pass_context
-def get_pump_diagnostics(ctx: click.Context, bow_id: int, equip_id: int) -> None:
-    """Retrieve current VSP pump diagnostics from the controller.
-
-    Pump diagnostics use the same OmniLogic request type as filter diagnostics,
-    but this command is provided so pump diagnostics are discoverable under pump
-    workflows.
-
-    Example:
-        omnilogic debug get-pump-diagnostics 1 9
-        omnilogic debug --raw get-pump-diagnostics 1 9
-
-    """
-    omnilogic: OmniLogic = ctx.obj["OMNILOGIC"]
-    diagnostics = asyncio.run(omnilogic._api.async_get_pump_diagnostics(pool_id=bow_id, equipment_id=equip_id, raw=ctx.obj["RAW"]))
     if ctx.obj["RAW"]:
         click.echo(diagnostics)
         return

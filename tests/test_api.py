@@ -224,19 +224,14 @@ async def test_async_get_telemetry_generates_valid_xml() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("method_name", "equipment_id"),
-    [("async_get_filter_diagnostics", 2), ("async_get_pump_diagnostics", 9)],
-)
-async def test_async_get_diagnostics_generates_valid_xml(method_name: str, equipment_id: int) -> None:
-    """Both diagnostics helpers should generate valid XML with correct parameters."""
+async def test_async_get_filter_diagnostics_generates_valid_xml() -> None:
+    """Filter diagnostics request should generate valid XML with correct parameters."""
     api = OmniLogicAPI("192.168.1.100")
 
     with patch.object(api, "async_send_and_receive", new_callable=AsyncMock) as mock_send:
         mock_send.return_value = '<?xml version="1.0"?><Response><Name>Diagnostics</Name></Response>'
 
-        method = getattr(api, method_name)
-        await method(pool_id=1, equipment_id=equipment_id, raw=True)
+        await api.async_get_filter_diagnostics(pool_id=1, equipment_id=2, raw=True)
 
         mock_send.assert_called_once()
         call_args = mock_send.call_args
