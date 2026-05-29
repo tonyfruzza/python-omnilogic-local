@@ -7,8 +7,12 @@ import click
 
 from pyomnilogic_local import OmniLogic
 from pyomnilogic_local.cli.debug import commands as debug
+from pyomnilogic_local.cli.filter_cmd import filter
 from pyomnilogic_local.cli.get import commands as get
-from pyomnilogic_local.cli.set import commands as set_cmds
+from pyomnilogic_local.cli.heater_cmd import heater
+from pyomnilogic_local.cli.light_cmd import light
+from pyomnilogic_local.cli.pump_cmd import pump
+from pyomnilogic_local.cli.relay_cmd import relay
 
 
 @click.group()
@@ -61,4 +65,8 @@ def entrypoint(ctx: click.Context, host: str, port: int, timeout: int, debug: bo
 
 entrypoint.add_command(debug.debug)
 entrypoint.add_command(get.get)
-entrypoint.add_command(set_cmds.set)
+entrypoint.add_command(heater)
+entrypoint.add_command(pump)
+entrypoint.add_command(filter)
+entrypoint.add_command(relay)
+entrypoint.add_command(light)
